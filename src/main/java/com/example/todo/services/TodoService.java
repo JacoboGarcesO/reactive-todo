@@ -6,8 +6,6 @@ import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-import java.time.Duration;
-
 @Service
 public class TodoService {
   private final TodoRepository todoRepository;
@@ -17,11 +15,11 @@ public class TodoService {
   }
 
   public Flux<Todo> getAllTasks() {
-    return todoRepository.findAll().delayElements(Duration.ofSeconds(5));
+    return todoRepository.findAll();
   }
 
   public Mono<Todo> getTaskById(String id) {
-    return todoRepository.findById(id);
+    return todoRepository.findById(id).switchIfEmpty(Mono.error(new RuntimeException("Task not found")));
   }
 
   public Mono<Todo> createTask(Todo todo) {
@@ -37,8 +35,10 @@ public class TodoService {
               return todoRepository.save(existingTask);
             });
   }
-
-  public Mono<Void> deleteTask(String id) {
-    return todoRepository.deleteById(id);
+  
+  public Mono<Todo> deleteTask(String id) {
+    return todoRepository.findById(id)
+            .flatMap(todo -> todoRepository.deleteById(id).then(Mono.just(todo)))
+            .switchIfEmpty(Mono.error(new RuntimeException("Task not found")));
   }
 }

@@ -2,6 +2,7 @@ package com.example.todo.services;
 
 import com.example.todo.model.Todo;
 import com.example.todo.repositories.TodoRepository;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import reactor.core.publisher.Flux;
@@ -11,8 +12,7 @@ import reactor.test.StepVerifier;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 class TodoServiceTest {
   private final TodoService todoService;
@@ -24,6 +24,7 @@ class TodoServiceTest {
   }
 
   @Test
+  @DisplayName("The service returns the todos correctly")
   void getAllTodos() {
     // Arrange
     when(todoRepository.findAll()).thenReturn(getTodos());
@@ -43,6 +44,7 @@ class TodoServiceTest {
   }
 
   @Test
+  @DisplayName("The service queries a todo by id")
   void getTodoById() {
     // Arrange
     Todo aux = new Todo("1", "Todo 1", "Description 1", false);
@@ -61,7 +63,8 @@ class TodoServiceTest {
   }
 
   @Test
-  void getTodoByIdNoFound() {
+  @DisplayName("The service throws a exception when the todo doesn't exist and try to get it")
+  void getTodoByIdNotFound() {
     // Arrange
     when(todoRepository.findById(anyString())).thenReturn(Mono.empty());
 
@@ -71,13 +74,14 @@ class TodoServiceTest {
     // Assert
     StepVerifier
             .create(todo)
-            .expectNextCount(0)
-            .verifyComplete();
+            .expectError(RuntimeException.class)
+            .verify();
 
     Mockito.verify(todoRepository).findById(anyString());
   }
 
   @Test
+  @DisplayName("The service creates a todo")
   void createTodo() {
     // Arrange
     Todo todo = new Todo("5", "Todo 5", "Description 5", false);
@@ -96,39 +100,7 @@ class TodoServiceTest {
   }
 
   @Test
-  void deleteTodoById() {
-    // Arrange
-    when(todoRepository.deleteById(anyString())).thenReturn(Mono.empty());
-
-    // Act
-    Mono<Void> voidMono = todoService.deleteTask("1");
-
-    // Assert
-    StepVerifier
-            .create(voidMono)
-            .verifyComplete();
-
-    Mockito.verify(todoRepository).deleteById(anyString());
-  }
-
-  @Test
-  void deleteTodoByIdNoFound() {
-    // Arrange
-    when(todoRepository.deleteById(anyString())).thenReturn(Mono.error(new RuntimeException()));
-
-    // Act
-    Mono<Void> voidMono = todoService.deleteTask("4");
-
-    // Assert
-    StepVerifier
-            .create(voidMono)
-            .expectError(RuntimeException.class)
-            .verify();
-
-    Mockito.verify(todoRepository).deleteById("4");
-  }
-
-  @Test
+  @DisplayName("The service updates a todo")
   void updateTodo() {
     // Arrange
     Todo todo = new Todo("1", "Todo 1", "Description 1", false);
@@ -154,7 +126,8 @@ class TodoServiceTest {
   }
 
   @Test
-  void updateTodoNoFound() {
+  @DisplayName("The service throws an exception when the todo doesn't exist and try to update it")
+  void updateTodoNotFound() {
     // Arrange
     Todo newTodo = new Todo("4", "Todo 4", "Description 4", true);
     when(todoRepository.findById(anyString())).thenReturn(Mono.empty());
@@ -167,6 +140,49 @@ class TodoServiceTest {
             .create(todoMono)
             .expectNextCount(0)
             .verifyComplete();
+
+    Mockito.verify(todoRepository).findById(anyString());
+  }
+
+  @Test
+  @DisplayName("The service deletes a todo")
+  void deleteTodoById() {
+    // Arrange
+    Todo todo = new Todo("5", "Todo 5", "Description 5", false);
+    when(todoRepository.findById(anyString())).thenReturn(Mono.just(todo));
+    when(todoRepository.deleteById(anyString())).thenReturn(Mono.empty());
+
+    // Act
+    Mono<Todo> result = todoService.deleteTask("5");
+
+    // Assert
+    StepVerifier
+            .create(result)
+            .assertNext(t -> {
+              assertEquals(todo.getTitle(), t.getTitle());
+              assertEquals(todo.getDescription(), t.getDescription());
+              assertEquals(todo.isCompleted(), t.isCompleted());
+            })
+            .verifyComplete();
+
+    Mockito.verify(todoRepository).findById(anyString());
+    Mockito.verify(todoRepository).deleteById(anyString());
+  }
+
+  @Test
+  @DisplayName("The service throws an exception when the todo doesn't exist and try to delete it")
+  void deleteTodoByIdNotFound() {
+    // Arrange
+    when(todoRepository.findById(anyString())).thenReturn(Mono.empty());
+
+    // Act
+    Mono<Todo> voidMono = todoService.deleteTask("4");
+
+    // Assert
+    StepVerifier
+            .create(voidMono)
+            .expectError(RuntimeException.class)
+            .verify();
 
     Mockito.verify(todoRepository).findById(anyString());
   }

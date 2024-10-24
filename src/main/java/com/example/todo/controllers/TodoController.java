@@ -3,7 +3,6 @@ package com.example.todo.controllers;
 import com.example.todo.model.Todo;
 import com.example.todo.services.TodoService;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Flux;
@@ -18,14 +17,16 @@ public class TodoController {
     this.todoService = todoService;
   }
 
-  @GetMapping(value = "/todos", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+  @GetMapping("/todos")
   public Flux<Todo> getAllTasks() {
     return todoService.getAllTasks();
   }
 
   @GetMapping("/todos/{id}")
-  public Mono<Todo> getTaskById(String id) {
-    return todoService.getTaskById(id);
+  public Mono<ResponseEntity<Todo>> getTaskById(@PathVariable String id) {
+    return todoService.getTaskById(id)
+            .map(ResponseEntity::ok)
+            .onErrorResume(throwable -> Mono.just(ResponseEntity.notFound().build()));
   }
 
   @PostMapping("/todos")
@@ -42,8 +43,9 @@ public class TodoController {
   }
 
   @DeleteMapping("/todos/{id}")
-  public Mono<ResponseEntity<Void>> deleteTask(@PathVariable String id) {
+  public Mono<ResponseEntity<Object>> deleteTask(@PathVariable String id) {
     return todoService.deleteTask(id)
-            .then(Mono.just(ResponseEntity.noContent().build()));
+            .then(Mono.just(ResponseEntity.noContent().build()))
+            .onErrorResume(throwable -> Mono.just(ResponseEntity.notFound().build()));
   }
 }
