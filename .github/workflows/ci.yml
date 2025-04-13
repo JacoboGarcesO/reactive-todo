@@ -11,28 +11,62 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+    - name: Debug - Start
+      run: echo "Starting workflow execution"
+    
     - uses: actions/checkout@v3
+      id: checkout
+    
+    - name: Debug - After Checkout
+      run: echo "Checkout completed successfully"
     
     - name: Set up JDK 17
+      id: setup-java
       uses: actions/setup-java@v3
       with:
         java-version: '17'
         distribution: 'temurin'
+    
+    - name: Debug - After Java Setup
+      run: echo "Java setup completed successfully"
         
     - name: Setup Gradle
+      id: setup-gradle
       uses: gradle/gradle-build-action@v2
     
+    - name: Debug - After Gradle Setup
+      run: echo "Gradle setup completed successfully"
+    
     - name: Grant execute permission for gradlew
+      id: chmod
       run: chmod +x gradlew
+    
+    - name: Debug - After chmod
+      run: echo "chmod completed successfully"
       
     - name: Build with Gradle
+      id: build
       run: ./gradlew build
     
+    - name: Debug - After Build
+      run: echo "Build completed successfully"
+    
     - name: Run tests
+      id: test
       run: ./gradlew test
     
+    - name: Debug - After Tests
+      run: echo "Tests completed successfully"
+    
+    - name: List build artifacts
+      run: ls -la build/libs/
+    
     - name: Upload build artifacts
+      id: upload
       uses: actions/upload-artifact@v2
       with:
         name: app-jar
         path: build/libs/*.jar
+    
+    - name: Debug - End
+      run: echo "Workflow completed successfully"
