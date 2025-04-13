@@ -22,25 +22,16 @@ jobs:
         name: app-jar
         path: build/libs
     
-    - name: Copy JAR file to EC2
-      uses: appleboy/scp-action@master
+    - name: Install SSH key
+      uses: shimataro/ssh-key-action@v2
       with:
-        host: ${{ secrets.EC2_HOST }}
-        username: ${{ secrets.EC2_USERNAME }}
         key: ${{ secrets.SSH_PRIVATE_KEY }}
-        port: 22
-        source: "build/libs/*.jar"
-        target: "~/app/"
-        strip_components: 2
-        timeout: 60s
+        known_hosts: ${{ secrets.KNOWN_HOSTS }}
     
-    - name: Restart application
-      uses: appleboy/ssh-action@master
-      with:
-        host: ${{ secrets.EC2_HOST }}
-        username: ${{ secrets.EC2_USERNAME }}
-        key: ${{ secrets.SSH_PRIVATE_KEY }}
-        port: 22
-        timeout: 60s
-        script: |
-          sudo systemctl restart todo-app
+    - name: Deploy to EC2
+      env:
+        EC2_HOST: ${{ secrets.EC2_HOST }}
+        EC2_USERNAME: ${{ secrets.EC2_USERNAME }}
+      run: |
+        scp build/libs/*.jar $EC2_USERNAME@$EC2_HOST:~/app/app.jar
+        ssh $EC2_USERNAME@$EC2_HOST "sudo systemctl restart todo-app"
