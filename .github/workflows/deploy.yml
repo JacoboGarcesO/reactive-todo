@@ -28,9 +28,11 @@ jobs:
         host: ${{ secrets.EC2_HOST }}
         username: ${{ secrets.EC2_USERNAME }}
         key: ${{ secrets.SSH_PRIVATE_KEY }}
+        port: 22
         source: "build/libs/*.jar"
         target: "~/app/"
         strip_components: 2
+        timeout: 60s
     
     - name: Restart application
       uses: appleboy/ssh-action@master
@@ -38,5 +40,7 @@ jobs:
         host: ${{ secrets.EC2_HOST }}
         username: ${{ secrets.EC2_USERNAME }}
         key: ${{ secrets.SSH_PRIVATE_KEY }}
+        port: 22
+        timeout: 60s
         script: |
           sudo systemctl restart todo-app
