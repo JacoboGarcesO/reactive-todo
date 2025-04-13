@@ -1,0 +1,37 @@
+name: Deploy to EC2
+
+on:
+  workflow_run:
+    workflows: ["Java CI with Gradle"]
+    types:
+      - completed
+    branches: [main, master]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Download build artifacts
+      uses: dawidd6/action-download-artifact@v2
+      with:
+        workflow: ci.yml
+        name: app-jar
+        path: build/libs
+    
+    - name: Install SSH key
+      uses: shimataro/ssh-key-action@v2
+      with:
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        known_hosts: ${{ secrets.KNOWN_HOSTS }}
+    
+    - name: Deploy to EC2
+      env:
+        EC2_HOST: ${{ secrets.EC2_HOST }}
+        EC2_USERNAME: ${{ secrets.EC2_USERNAME }}
+      run: |
+        scp build/libs/*.jar $EC2_USERNAME@$EC2_HOST:~/app.jar
+        ssh $EC2_USERNAME@$EC2_HOST "sudo systemctl restart todo-app"
