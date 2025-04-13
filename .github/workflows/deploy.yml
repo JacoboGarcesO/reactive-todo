@@ -26,12 +26,11 @@ jobs:
       uses: shimataro/ssh-key-action@v2
       with:
         key: ${{ secrets.SSH_PRIVATE_KEY }}
-        known_hosts: ${{ secrets.KNOWN_HOSTS }}
     
     - name: Deploy to EC2
       env:
         EC2_HOST: ${{ secrets.EC2_HOST }}
         EC2_USERNAME: ${{ secrets.EC2_USERNAME }}
       run: |
-        scp build/libs/*.jar $EC2_USERNAME@$EC2_HOST:~/app.jar
+        scp build/libs/*.jar $EC2_USERNAME@$EC2_HOST:~/app/app.jar
         ssh $EC2_USERNAME@$EC2_HOST "sudo systemctl restart todo-app"
