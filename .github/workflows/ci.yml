@@ -27,12 +27,9 @@ jobs:
       
     - name: Build with Gradle
       run: ./gradlew build
-    
-    - name: Run tests
-      run: ./gradlew test
-    
+
     - name: Upload build artifacts
       uses: actions/upload-artifact@v4
       with:
         name: app-jar
-        path: build/libs/*.jar
+        path: build/libs/todo-0.0.1-SNAPSHOT.jar
